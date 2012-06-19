@@ -261,7 +261,7 @@ float calcCorrelation(const cv::Mat &input, float covariance)
 	//calculate varianceY
 	float varY = cv::sum(A.mul(tmpY))[0];
 	//calculate correlation
-	return covariance/sqrt(varX*varY); 
+	return covariance/ (sqrt(varX) * sqrt(varY)); 
 }
 
 /**
