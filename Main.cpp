@@ -64,8 +64,10 @@ void reduceColors(cv::Mat input, cv::Mat &output, int numColors)
  */
 float calcEnergy(const cv::Mat &input)
 {
+	cv::Mat A;
+	input.convertTo(A, CV_32FC1);
 	cv::Mat sqr;
-	cv::pow(input, 2, sqr);
+	cv::pow(A, 2, sqr);
 	return cv::sum(sqr)[0];
 }
 
@@ -261,7 +263,7 @@ float calcCorrelation(const cv::Mat &input, float covariance)
 	//calculate varianceY
 	float varY = cv::sum(A.mul(tmpY))[0];
 	//calculate correlation
-	return covariance/ (sqrt(varX) * sqrt(varY)); 
+	return covariance / (sqrt(varX) * sqrt(varY)); 
 }
 
 /**
@@ -292,22 +294,22 @@ float* statisticalAnalysis(const cv::Mat &input, int &numValues)
 	result[1] = stddev[0] * stddev[0];
 
 	//calculate energy
-	result[2] = calcEnergy(input);
+	result[2] = calcEnergy(input) / input.rows / input.cols;
 
 	//calculate inertia 
-	result[3] = calcInertia(input);
+	result[3] = calcInertia(input) / input.rows / input.cols;
 
 	//calculate entropy
-	result[4] = calcEntropy(input);
+	result[4] = calcEntropy(input) / input.rows / input.cols;
 	
 	//calculate homogeneity 
-	result[5] = calcHomogeneity(input);
+	result[5] = calcHomogeneity(input) / input.rows / input.cols;
 
 	//calculate covariance 
-	result[6] = calcCovariance(input);
+	result[6] = calcCovariance(input) / input.rows / input.cols;
 	
 	//calculate correlation 
-	result[7] = calcCorrelation(input, result[6]);
+	result[7] = calcCorrelation(input, result[6] * input.rows * input.cols);
 
 	//return the result vector
 	return result;
@@ -328,7 +330,7 @@ float textureVectorDistance(float* v1, float* v2, int nComps)
 	float result = 0;
 	for (int i = 0; i < nComps; i++)
 	{
-		result += fabs(v1[i] - v2[i]);	
+		result += fabs(v1[i] - v2[i]) / max(1.0f, max(v1[i], v2[i]));	
 	}
 	return result;
 }
