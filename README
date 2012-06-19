@@ -1,0 +1,22 @@
+0. Author
+=========
+The provided code is written by Kim Oliver Rinnewitz (krinnewitz@uos.de)
+
+1. Description
+==============
+%TODO
+It uses OpenCV and there may be implementations with a much better performance.
+The main purpose is to evaluate how successful this method can be used in the
+context of texture application in 3d reconstructions.
+
+2. Requirements
+===============
+You need to have a recent version of OpenCV installed. 
+
+3. Compiling
+============
+You can compile the program by entering the following commands on the command line:
+
+    mkdir build && cd build
+    cmake ..
+    make
