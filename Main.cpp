@@ -487,6 +487,41 @@ float calcCorrelation(float** com, int numColors)
 			result += (i * j * com[i][j] - ux * uy) / (sx * sy);
 		}
 	}
+	return result;
+}
+
+/**
+ * \brief	Calculates the sum of squares of the texture
+ *		represented by the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ *
+ * \return 	The sum of squares of the texture
+ */
+float calcSumOfSquares(float** com, int numColors)
+{
+	float u = 0;
+
+	//calculate mean of the com
+	for (int i = 0; i < numColors; i++)
+	{
+		for (int j = 0; j < numColors; j++)
+		{
+			u += com[i][j] / (numColors * numColors);
+		}
+	}
+		
+	//calculate sum of squares : variance
+	float result = 0;
+	for (int i = 0; i < numColors; i++)
+	{
+		for (int j = 0; j < numColors; j++)
+		{
+			result += (i - u) * (i - u) * com[i][j];
+		}
+	}
+	return result;
 }
 
 /**
@@ -502,7 +537,7 @@ float calcCorrelation(float** com, int numColors)
 float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 {
 	//We currently have 8 statistical values
-	numValues = 20;
+	numValues = 24;
 
 	//Allocate result vector
 	float* result = new float[numValues];
@@ -565,7 +600,10 @@ float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 	result[19] = calcCorrelation(com3, numColors);
 
 	//Sum of squares: Variance
-	//TODO
+	result[20] = calcSumOfSquares(com0, numColors);
+	result[21] = calcSumOfSquares(com1, numColors);
+	result[22] = calcSumOfSquares(com2, numColors);
+	result[23] = calcSumOfSquares(com3, numColors);
 
 	//Inverse difference moment
 	//TODO
