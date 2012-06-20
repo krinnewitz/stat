@@ -363,22 +363,71 @@ float calcCorrelation(const cv::Mat &input, float covariance)
 }
 
 /**
+ * \brief	Calculates the angular second moment of the texture
+ *		represented by the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ *
+ * \return 	The angular second moment
+ */
+float calcASM(float** com, int numColors)
+{
+	float result = 0;
+	for (int i = 0; i < numColors; i++)
+	{
+		for (int j = 0; j < numColors; j++)
+		{
+			result += com[i][j] * com[i][j];
+		}
+	}
+}
+
+/**
+ * \brief	Calculates the contrast of the texture
+ *		represented by the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ *
+ * \return 	The contrast of the texture
+ */
+float calcContrast(float** com, int numColors)
+{
+	float result = 0;
+	for (int n = 0; n < numColors; n++)
+	{
+		for (int i = 0; i < numColors; i++)
+		{
+			for (int j = 0; j < numColors; j++)
+			{
+				if (abs(i-j) == n)
+				{
+					result += n * n * com[i][j];
+				}
+			}
+		}
+	}
+}
+/**
  * \brief	Calculates several statistical values for the given
  *		input image
  *
  * \param	input		The input image
  * \param	numValues	Variable to take the number of values
+ * \param	numColors	The number of gray levels to use 
  *
  * \return	A vector of statistical values describing the image
  */
-float* statisticalAnalysis(const cv::Mat &input, int &numValues)
+float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 {
 	//We currently have 8 statistical values
-	numValues = 8;
+	numValues = 16;
 
 	//Allocate result vector
 	float* result = new float[numValues];
 
+//*****************statistical features of first order -> computed directly on the image***********************
 	//calculate mean and standard deviation
 	cv::Scalar mean, stddev;
 	cv::meanStdDev(input, mean, stddev);
@@ -407,6 +456,36 @@ float* statisticalAnalysis(const cv::Mat &input, int &numValues)
 	//calculate correlation 
 	result[7] = calcCorrelation(input, result[6] * input.rows * input.cols);
 
+//*****************statistical features of second order -> computed  on the image's cooccurrence matrix*****************
+	//calculate the cooccurrence matrix in horizontal direction
+	float** com0 = calcCooccurrenceMatrix(input, numColors, 0);
+	//calculate the cooccurrence matrix in diagonal direction
+	float** com1 = calcCooccurrenceMatrix(input, numColors, 1);
+	//calculate the cooccurrence matrix in vertical direction
+	float** com2 = calcCooccurrenceMatrix(input, numColors, 2);
+	//calculate the cooccurrence matrix in diagonal direction
+	float** com3 = calcCooccurrenceMatrix(input, numColors, 3);
+
+	//Angular second moment
+	result[8]  = calcASM(com0, numColors);
+	result[9]  = calcASM(com1, numColors);
+	result[10] = calcASM(com2, numColors);
+	result[11] = calcASM(com3, numColors);
+
+	//constrast
+	result[12] = calcContrast(com0, numColors);
+	result[13] = calcContrast(com1, numColors);
+	result[14] = calcContrast(com2, numColors);
+	result[15] = calcContrast(com3, numColors);
+
+	//free the cooccurrence matrix
+	for (int i = 0; i < numColors; i++)
+	{
+		delete[] com0[i];
+		delete[] com1[i];
+		delete[] com2[i];
+		delete[] com3[i];
+	}
 	//return the result vector
 	return result;
 }
@@ -444,8 +523,8 @@ int main (int argc, char** argv)
 		cv::Mat img2 = cv::imread(argv[2], 0);
 
 		int n = 0;	
-		float* stats1 = statisticalAnalysis(img1, n);	
-		float* stats2 = statisticalAnalysis(img2, n);	
+		float* stats1 = statisticalAnalysis(img1, n, numColors);	
+		float* stats2 = statisticalAnalysis(img2, n, numColors);	
 		cout<<textureVectorDistance(stats1, stats2, n)<<endl;
 		for(int i = 0; i < n; i++)
 		{
