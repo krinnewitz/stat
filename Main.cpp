@@ -475,6 +475,8 @@ float calcCorrelation(float** com, int numColors)
 		sx += (px(com, numColors, i) - ux) * (px(com, numColors, i) - ux);
 		sy += (py(com, numColors, i) - uy) * (py(com, numColors, i) - uy);
 	}
+	sx = sqrt(sx);
+	sy = sqrt(sy);
 		
 	//calculate correlatione
 	float result = 0;
