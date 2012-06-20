@@ -152,6 +152,45 @@ float**  calcCooccurrenceMatrix(const cv::Mat &input, int numColors, unsigned ch
 }
 
 /**
+ * \brief	Returns the i-th entry of the magrginal probability matrix
+ *		of the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of rows and cols of the com
+ * \param	i		The entry to get
+ *
+ *
+ */
+float px(float** com, int numColors, int i)
+{
+	float result = 0;
+	for (int j = 0; j < numColors; j++)
+	{
+		result += com[i][j];
+	}
+}
+
+
+/**
+ * \brief	Returns the j-th entry of the magrginal probability matrix
+ *		of the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of rows and cols of the com
+ * \param	j		The entry to get
+ *
+ *
+ */
+float py(float** com, int numColors, int j)
+{
+	float result = 0;
+	for (int i = 0; i < numColors; i++)
+	{
+		result += com[i][j];
+	}
+}
+
+/**
  * \brief	Calculates the energy of the given image
  *
  * \param	input	The image to calculate the energy of
@@ -409,6 +448,45 @@ float calcContrast(float** com, int numColors)
 		}
 	}
 }
+
+
+/**
+ * \brief	Calculates the correlation of the texture
+ *		represented by the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ *
+ * \return 	The correlation of the texture
+ */
+float calcCorrelation(float** com, int numColors)
+{
+	float ux = 0, uy = 0, sx = 0, sy = 0;
+
+	//calculate means of px and py
+	for (int i = 0; i < numColors; i++)
+	{
+		ux += px(com, numColors, i) / numColors;
+		uy += py(com, numColors, i) / numColors;
+	}
+	//calculate standard deviations of px and py
+	for (int i = 0; i < numColors; i++)
+	{
+		sx += (px(com, numColors, i) - ux) * (px(com, numColors, i) - ux);
+		sy += (py(com, numColors, i) - uy) * (py(com, numColors, i) - uy);
+	}
+		
+	//calculate correlatione
+	float result = 0;
+	for (int i = 0; i < numColors; i++)
+	{
+		for (int j = 0; j < numColors; j++)
+		{
+			result += (i * j * com[i][j] - ux * uy) / (sx * sy);
+		}
+	}
+}
+
 /**
  * \brief	Calculates several statistical values for the given
  *		input image
@@ -422,7 +500,7 @@ float calcContrast(float** com, int numColors)
 float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 {
 	//We currently have 8 statistical values
-	numValues = 16;
+	numValues = 20;
 
 	//Allocate result vector
 	float* result = new float[numValues];
@@ -477,6 +555,45 @@ float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 	result[13] = calcContrast(com1, numColors);
 	result[14] = calcContrast(com2, numColors);
 	result[15] = calcContrast(com3, numColors);
+	
+	//correlation
+	result[16] = calcCorrelation(com0, numColors);
+	result[17] = calcCorrelation(com1, numColors);
+	result[18] = calcCorrelation(com2, numColors);
+	result[19] = calcCorrelation(com3, numColors);
+
+	//Sum of squares: Variance
+	//TODO
+
+	//Inverse difference moment
+	//TODO
+	
+	//sum average
+	//TODO
+
+	//sum variance
+	//TODO
+
+	//sum entropy
+	//TODO
+
+	//entropy
+	//TODO
+
+	//difference variance
+	//TODO
+
+	//difference entropy
+	//TODO
+
+	//information meeasures of correlation
+	//TODO
+	
+	//information meeasures of correlation
+	//TODO
+
+	//Maximal correlation coefficient
+	//TODO
 
 	//free the cooccurrence matrix
 	for (int i = 0; i < numColors; i++)
