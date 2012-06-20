@@ -56,6 +56,102 @@ void reduceColors(cv::Mat input, cv::Mat &output, int numColors)
 }
 
 /**
+ * \brief Calculates the cooccurrence matrix for the given texture
+ *
+ * \param	input		The texture
+ * \param	numColors	The number of gray levels to use
+ * \param	direction	The direction to calculate the
+ *				cooccurrence matrix for
+ *
+ * \return	The normalized cooccurrence matrix of size
+ *		numColors x numColors
+ */
+float**  calcCooccurrenceMatrix(const cv::Mat &input, int numColors, unsigned char direction)
+{
+	
+	//reduce the number of colors
+	cv::Mat img = input;
+	if(input.channels() == 1)
+	{
+		cv::cvtColor(input, img, CV_GRAY2RGB);
+	}
+	reduceColors(img, img, numColors);
+	
+	
+	int dx, dy;
+	
+	//0 degrees -> horizontal
+	if (direction == 0)
+	{
+		dx = 1;
+		dy = 0;
+	}
+	//45 degrees -> diagonal
+	if (direction == 1)
+	{
+		dx = 1;
+		dy = 1;
+	}
+	//90 degrees -> vertical
+	if(direction == 2)
+	{
+		dx = 0;
+		dy = 1;
+	}
+	//135 degrees -> diagonal
+	if (direction >=3)
+	{
+		dx = -1,
+		dy =  1;
+	}
+
+	//allocate output matrix
+	float** result = new float*[numColors];
+	for(int j = 0; j < numColors; j++)
+	{
+		result[j] = new float[numColors];
+		memset(result[j], 0, numColors * sizeof(float));
+	}
+
+	//calculate cooccurrence matrix
+	for (int y = 0; y < img.rows; y++)
+	{
+		for(int x = 0; x < img.cols; x++)
+		{
+			if (x + dx >= 0 && x + dx < img.cols && y + dy >= 0 && y + dy < img.rows)
+			{
+				result[img.at<unsigned char>(y,x)][img.at<unsigned char>(y+dy,x+dx)]++;
+			}
+			if (x - dx >= 0 && x - dx < img.cols && y - dy >= 0 && y - dy < img.rows)
+			{
+				result[img.at<unsigned char>(y,x)][img.at<unsigned char>(y-dy,x-dx)]++;
+			}
+		}
+	}
+
+	
+	//normalize cooccurrence matrix
+	float denom = 1;
+	if (direction == 0 || direction == 2)
+	{
+		denom = 2 * img.rows * (img.cols -1);
+	}
+	else
+	{
+		denom = 2 * (img.rows - 1) * (img.cols - 1);
+	}
+	for (int i = 0; i < numColors; i++) 
+	{
+		for(int j = 0; j < numColors; j++)
+		{
+			result[i][j] /= denom;
+		}
+	}
+		
+	return result;
+}
+
+/**
  * \brief	Calculates the energy of the given image
  *
  * \param	input	The image to calculate the energy of
@@ -354,6 +450,16 @@ int main (int argc, char** argv)
 		for(int i = 0; i < n; i++)
 		{
 			cout<<stats1[i]<<" "<<stats2[i]<<endl;
+		}
+
+		float** com = calcCooccurrenceMatrix(img1, numColors, 2);
+		for(int i = 0; i < numColors; i++)
+		{
+			for (int j = 0; j < numColors; j++)
+			{
+				cout<<setw(14)<<com[i][j];
+			}
+			cout<<endl;
 		}
 
 		return EXIT_SUCCESS;			
