@@ -525,6 +525,28 @@ float calcSumOfSquares(float** com, int numColors)
 }
 
 /**
+ * \brief	Calculates the inverse difference moment of the texture
+ *		represented by the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ *
+ * \return 	The inverse difference moment of the texture
+ */
+float calcInverseDifference(float** com, int numColors)
+{
+	//calculate inverse difference moment
+	float result = 0;
+	for (int i = 0; i < numColors; i++)
+	{
+		for (int j = 0; j < numColors; j++)
+		{
+			result += 1 / ( 1 + (i - j) * (i - j)) * com[i][j];
+		}
+	}
+	return result;
+}
+/**
  * \brief	Calculates several statistical values for the given
  *		input image
  *
@@ -537,7 +559,7 @@ float calcSumOfSquares(float** com, int numColors)
 float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 {
 	//We currently have 8 statistical values
-	numValues = 24;
+	numValues = 28;
 
 	//Allocate result vector
 	float* result = new float[numValues];
@@ -606,7 +628,10 @@ float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 	result[23] = calcSumOfSquares(com3, numColors);
 
 	//Inverse difference moment
-	//TODO
+	result[24] = calcInverseDifference(com0, numColors);
+	result[25] = calcInverseDifference(com1, numColors);
+	result[26] = calcInverseDifference(com2, numColors);
+	result[27] = calcInverseDifference(com3, numColors);
 	
 	//sum average
 	//TODO
