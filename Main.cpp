@@ -820,6 +820,40 @@ float calcInformationMeasures2(float** com, int numColors)
 	return result;
 }
 
+
+/**
+ * \brief	Calculates the maximal correlation coefficient of the texture
+ *		represented by the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ *
+ * \return 	The maximal correlation coefficient of the texture
+ */
+float calcMaxCorrelationCoefficient(float** com, int numColors)
+{
+	const float epsilon = 0.000001;
+	//calculate Q
+	cv::Mat Q(numColors, numColors, CV_64FC1);
+	for (int i = 0; i < numColors; i++)
+	{
+		for(int j = 0; j < numColors; j++)
+		{
+			Q.at<double>(i,j) = 0;
+			for (int k = 0; k < numColors; k++)
+			{
+				Q.at<double>(i,j) += (com[i][k] * com[j][k]) / (px(com, numColors, i) * py(com, numColors, k) + epsilon);
+			}
+		}
+	}
+	
+	//get the second largest eigenvalue of Q
+	cv::Mat E, V;
+	cv::eigen(Q, E, V);
+	double result  = E.at<double>(1,0);
+	return sqrt(result);
+}
+
 /**
  * \brief	Calculates several statistical values for the given
  *		input image
@@ -832,8 +866,8 @@ float calcInformationMeasures2(float** com, int numColors)
  */
 float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 {
-	//We currently have 60 statistical values
-	numValues = 60;
+	//We currently have 64 statistical values
+	numValues = 64;
 
 	//Allocate result vector
 	float* result = new float[numValues];
@@ -958,7 +992,10 @@ float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 	result[59] = calcInformationMeasures2(com3, numColors);
 
 	//Maximal correlation coefficient
-	//TODO
+	result[60] = calcMaxCorrelationCoefficient(com0, numColors);
+	result[61] = calcMaxCorrelationCoefficient(com1, numColors);
+	result[62] = calcMaxCorrelationCoefficient(com2, numColors);
+	result[63] = calcMaxCorrelationCoefficient(com3, numColors);
 
 	//free the cooccurrence matrix
 	for (int i = 0; i < numColors; i++)
