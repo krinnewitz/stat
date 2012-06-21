@@ -742,6 +742,84 @@ float calcDifferenceEntropy(float** com, int numColors)
 	return result;
 }
 
+
+
+/**
+ * \brief	Calculates the information measures 1 of the texture
+ *		represented by the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ *
+ * \return 	The information measures 1 of the texture
+ */
+float calcInformationMeasures1(float** com, int numColors)
+{
+	const float epsilon = 0.000001;
+
+	//calculate HXY1
+	float HXY1 = 0;
+	for (int i = 0; i < numColors; i++)
+	{
+		for (int j = 0; j < numColors; j++)
+		{
+			HXY1 += com[i][j] * log(px(com, numColors, i) * py(com, numColors, j) + epsilon);
+		}
+	}
+	HXY1 *= -1;
+
+	//calculate HX and HY
+	float HX = 0, HY = 0;
+	for (int i = 0; i < numColors; i++)
+	{
+		HX += px(com, numColors, i) * log(px(com, numColors, i) + epsilon);
+		HY += py(com, numColors, i) * log(py(com, numColors, i) + epsilon);
+	}
+	HX *= -1;
+	HY *= -1;
+
+	//calculate HXY
+	float HXY = calcEntropy(com, numColors);
+
+	//calculate  information measures 1
+	float result = (HXY - HXY1) / max(HX, HY);
+
+	return result;
+}
+
+/**
+ * \brief	Calculates the information measures 2 of the texture
+ *		represented by the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ *
+ * \return 	The information measures 2 of the texture
+ */
+float calcInformationMeasures2(float** com, int numColors)
+{
+	const float epsilon = 0.000001;
+
+	//calculate HXY2
+	float HXY2 = 0;
+	for (int i = 0; i < numColors; i++)
+	{
+		for (int j = 0; j < numColors; j++)
+		{
+			HXY2 += px(com, numColors, i) * py(com, numColors, j) * log(px(com, numColors, i) * py(com, numColors, j) + epsilon);
+		}
+	}
+	HXY2 *= -1;
+
+	//calculate HXY
+	float HXY = calcEntropy(com, numColors);
+
+	//calculate  information measures 1
+	float result = sqrt(1 - exp(-2.0 * (HXY2 - HXY)));
+
+	return result;
+}
+
 /**
  * \brief	Calculates several statistical values for the given
  *		input image
@@ -754,8 +832,8 @@ float calcDifferenceEntropy(float** com, int numColors)
  */
 float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 {
-	//We currently have 52 statistical values
-	numValues = 52;
+	//We currently have 60 statistical values
+	numValues = 60;
 
 	//Allocate result vector
 	float* result = new float[numValues];
@@ -867,11 +945,17 @@ float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 	result[50] = calcDifferenceEntropy(com2, numColors);
 	result[51] = calcDifferenceEntropy(com3, numColors);
 
-	//information meeasures of correlation
-	//TODO
+	//information meeasures 1 of correlation
+	result[52] = calcInformationMeasures1(com0, numColors);
+	result[53] = calcInformationMeasures1(com1, numColors);
+	result[54] = calcInformationMeasures1(com2, numColors);
+	result[55] = calcInformationMeasures1(com3, numColors);
 	
-	//information meeasures of correlation
-	//TODO
+	//information meeasures 2 of correlation
+	result[56] = calcInformationMeasures2(com0, numColors);
+	result[57] = calcInformationMeasures2(com1, numColors);
+	result[58] = calcInformationMeasures2(com2, numColors);
+	result[59] = calcInformationMeasures2(com3, numColors);
 
 	//Maximal correlation coefficient
 	//TODO
