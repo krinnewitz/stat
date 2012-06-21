@@ -719,6 +719,30 @@ float calcDifferenceVariance(float** com, int numColors)
 }
 
 /**
+ * \brief	Calculates the difference entropy of the texture
+ *		represented by the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ *
+ * \return 	The difference entropy of the texture
+ */
+float calcDifferenceEntropy(float** com, int numColors)
+{
+	const float epsilon = 0.000001;
+
+	//calculate difference entropy
+	float result = 0;
+	for (int i = 0; i < numColors; i++)
+	{
+		float p = pxminusy(com, numColors, i);
+		result +=  p * log(p + epsilon);
+	}
+	result *= -1;
+	return result;
+}
+
+/**
  * \brief	Calculates several statistical values for the given
  *		input image
  *
@@ -730,8 +754,8 @@ float calcDifferenceVariance(float** com, int numColors)
  */
 float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 {
-	//We currently have 48 statistical values
-	numValues = 48;
+	//We currently have 52 statistical values
+	numValues = 52;
 
 	//Allocate result vector
 	float* result = new float[numValues];
@@ -838,7 +862,10 @@ float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 	result[47] = calcDifferenceVariance(com3, numColors);
 
 	//difference entropy
-	//TODO
+	result[48] = calcDifferenceEntropy(com0, numColors);
+	result[49] = calcDifferenceEntropy(com1, numColors);
+	result[50] = calcDifferenceEntropy(com2, numColors);
+	result[51] = calcDifferenceEntropy(com3, numColors);
 
 	//information meeasures of correlation
 	//TODO
