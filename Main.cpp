@@ -402,6 +402,56 @@ float calcCorrelation(const cv::Mat &input, float covariance)
 }
 
 /**
+ * \brief	Calculates p_{x+y}(k)	
+ *		
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ * \param	k		k
+ *
+ * \return 	p_{x+y}(k)
+ */
+float pxplusy(float** com, int numColors, int k)
+{
+	float result = 0;
+	for (int i = 0; i < numColors; i++)
+	{
+		for (int j = 0; j < numColors; j++)
+		{
+			if (i + j == k)
+			{
+				result += com[i][j];
+			}
+		}
+	}
+}
+
+/**
+ * \brief	Calculates p_{x-y}(k)	
+ *		
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ * \param	k		k
+ *
+ * \return 	p_{x-y}(k)
+ */
+float pxminusy(float** com, int numColors, int k)
+{
+	float result = 0;
+	for (int i = 0; i < numColors; i++)
+	{
+		for (int j = 0; j < numColors; j++)
+		{
+			if (abs(i - j) == k)
+			{
+				result += com[i][j];
+			}
+		}
+	}
+}
+
+/**
  * \brief	Calculates the angular second moment of the texture
  *		represented by the given cooccurrence matrix
  *
@@ -546,6 +596,28 @@ float calcInverseDifference(float** com, int numColors)
 	}
 	return result;
 }
+
+
+/**
+ * \brief	Calculates the sum average of the texture
+ *		represented by the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ *
+ * \return 	The sum average of the texture
+ */
+float calcSumAvg(float** com, int numColors)
+{
+	//calculate sum average
+	float result = 0;
+	for (int i = 0; i < 2 * numColors - 1; i++)
+	{
+		result += i * pxplusy(com, numColors, i);
+	}
+	return result;
+}
+
 /**
  * \brief	Calculates several statistical values for the given
  *		input image
@@ -559,7 +631,7 @@ float calcInverseDifference(float** com, int numColors)
 float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 {
 	//We currently have 8 statistical values
-	numValues = 28;
+	numValues = 32;
 
 	//Allocate result vector
 	float* result = new float[numValues];
@@ -603,6 +675,8 @@ float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 	//calculate the cooccurrence matrix in diagonal direction
 	float** com3 = calcCooccurrenceMatrix(input, numColors, 3);
 
+
+//TODO: we should use average and range values later on for rotation invariance in case of 45, 90 and 135 degree rotations
 	//Angular second moment
 	result[8]  = calcASM(com0, numColors);
 	result[9]  = calcASM(com1, numColors);
@@ -634,7 +708,10 @@ float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 	result[27] = calcInverseDifference(com3, numColors);
 	
 	//sum average
-	//TODO
+	result[28] = calcSumAvg(com0, numColors);
+	result[29] = calcSumAvg(com1, numColors);
+	result[30] = calcSumAvg(com2, numColors);
+	result[31] = calcSumAvg(com3, numColors);
 
 	//sum variance
 	//TODO
