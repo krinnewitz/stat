@@ -663,6 +663,33 @@ float calcSumVariance(float** com, int numColors)
 	}
 	return result;
 }
+
+
+/**
+ * \brief	Calculates the entropy of the texture
+ *		represented by the given cooccurrence matrix
+ *
+ * \param	com		The cooccurrence matrix
+ * \param	numColors	The number of colors
+ *
+ * \return 	The entropy of the texture
+ */
+float calcEntropy(float** com, int numColors)
+{
+	const float epsilon = 0.000001;
+	//calculate entropy
+	float result = 0;
+	for (int i = 0; i < numColors; i++)
+	{
+		for (int j = 0; j < numColors; j++)
+		{
+			result += com[i][j] * log(com[i][j] + epsilon);
+		}
+	}
+	result *= -1;
+	return result;
+}
+
 /**
  * \brief	Calculates several statistical values for the given
  *		input image
@@ -675,8 +702,8 @@ float calcSumVariance(float** com, int numColors)
  */
 float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 {
-	//We currently have 40 statistical values
-	numValues = 40;
+	//We currently have 44 statistical values
+	numValues = 44;
 
 	//Allocate result vector
 	float* result = new float[numValues];
@@ -760,18 +787,22 @@ float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 
 	//sum entropy
 	result[32] = calcSumEntropy(com0, numColors);
-	result[33] = calcSumEntropy(com3, numColors);
+	result[33] = calcSumEntropy(com1, numColors);
 	result[34] = calcSumEntropy(com2, numColors);
 	result[35] = calcSumEntropy(com3, numColors);
 
 	//sum variance
 	result[36] = calcSumVariance(com0, numColors);
-	result[37] = calcSumVariance(com3, numColors);
+	result[37] = calcSumVariance(com1, numColors);
 	result[38] = calcSumVariance(com2, numColors);
 	result[39] = calcSumVariance(com3, numColors);
 
 	//entropy
-	//TODO
+	//Sum of squares: Variance
+	result[40] = calcEntropy(com0, numColors);
+	result[41] = calcEntropy(com1, numColors);
+	result[42] = calcEntropy(com2, numColors);
+	result[43] = calcEntropy(com3, numColors);
 
 	//difference variance
 	//TODO
