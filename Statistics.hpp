@@ -29,6 +29,7 @@
 
 #include <cstring>
 #include <opencv/highgui.h>
+#include <opencv/cv.h>
 #include <cstdio>
 
 namespace lssr {
@@ -42,15 +43,91 @@ public:
 
 
 	/**
-	 * @brief 	Constructor.
-	 *
-	 */
-	Statistics( );
+	* \brief Constructor. Calculates the cooccurrence matrix for the given Texture.
+	*
+	* \param	t		The texture
+	* \param	numColors	The number of gray levels to use
+	*
+	*/
+	Statistics(Texture* t, int numColors)
+
+
+	/**
+	* \brief	Calculates the distance of two texture vectors
+	*
+	* \param	v1	The first texture vector
+	* \param	v2	The second texture vector
+	* \param	nComps	The number of components of the texture
+	*			vectors
+	*
+	* \return	The distance of the given texture vectors
+	*/
+	static float textureVectorDistance(float* v1, float* v2, int nComps);
 
 	/**
 	 * Destructor.
 	 */
 	virtual ~Statistics();
+
+private:
+	/**
+	 * \brief	Returns the i-th entry of the magrginal probability matrix
+	 *		of the given cooccurrence matrix
+	 *
+	 * \param	com		The cooccurrence matrix
+	 * \param	i		The entry to get
+	 *
+	 *
+	 */
+	float px(float** com, int i);
+
+	/**
+	 * \brief	Returns the j-th entry of the magrginal probability matrix
+	 *		of the given cooccurrence matrix
+	 *
+	 * \param	com		The cooccurrence matrix
+	 * \param	j		The entry to get
+	 *
+	 *
+	 */
+	float py(float** com, int j);
+
+	/**
+	 * \brief	Calculates p_{x+y}(k)	
+	 *		
+	 *
+	 * \param	com		The cooccurrence matrix
+	 * \param	k		k
+	 *
+	 * \return 	p_{x+y}(k)
+	 */
+	float pxplusy(float** com,  int k);
+
+	/**
+	 * \brief	Calculates p_{x-y}(k)	
+	 *		
+	 *
+	 * \param	com		The cooccurrence matrix
+	 * \param	k		k
+	 *
+	 * \return 	p_{x-y}(k)
+	 */
+	float pxminusy(float** com, int k);
+
+	//The number of rows and cols of the cooccurrence matrix
+	int m_numColors;
+
+	//cooccurrence matrix for 0 degrees direction
+	float** m_cooc0;
+	
+	//cooccurrence matrix for 45 degrees direction
+	float** m_cooc1;
+
+	//cooccurrence matrix for 90 degrees direction
+	float** m_cooc2;
+
+	//cooccurrence matrix for 135 degrees direction
+	float** m_cooc3;
 };
 
 }
