@@ -3,7 +3,7 @@ project (STAT)
 
 FIND_PACKAGE( OpenCV REQUIRED )
 
-add_executable (stat Main.cpp) 
+add_executable (stat Main.cpp Statistics.cpp ImageProcessor.cpp Texture.cpp) 
 
 TARGET_LINK_LIBRARIES( stat ${OpenCV_LIBS} )
 
