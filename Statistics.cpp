@@ -53,7 +53,7 @@ float Statistics::textureVectorDistance(float* v1, float* v2, int nComps)
 	float result = 0;
 	for (int i = 0; i < nComps; i++)
 	{
-		result += fabs(v1[i] - v2[i]) / max(1.0f, max(v1[i], v2[i]));	
+		result += fabs(v1[i] - v2[i]);// / max(1.0f, max(v1[i], v2[i]));	
 	}
 	return result;
 }
