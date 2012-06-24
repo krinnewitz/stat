@@ -51,6 +51,14 @@ public:
 	*/
 	Statistics(Texture* t, int numColors)
 
+	/**
+	* \brief Constructor. Calculates the cooccurrence matrix for the given Texture.
+	*
+	* \param	t		The texture
+	* \param	numColors	The number of gray levels to use
+	*
+	*/
+	Statistics(const cv::Mat &t, int numColors)
 
 	/**
 	* \brief	Calculates the distance of two texture vectors
@@ -170,6 +178,14 @@ public:
 	float calcMaxCorrelationCoefficient();
 
 private:
+
+	/**
+         * \brief calculates all cooccurence matrizes
+         *
+         * \param	t	The texture image
+         */
+	void calcCooc(const cv::Mat &t);
+
 	/**
 	 * \brief	Returns the i-th entry of the magrginal probability matrix
 	 *		of the given cooccurrence matrix

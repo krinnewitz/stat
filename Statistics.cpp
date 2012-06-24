@@ -33,89 +33,18 @@ float Statistics::epsilon = 0.0000001;
 
 Statistics::Statistics(Texture* t, int numColors)
 {
-	
 	m_numColors = numColors;
 
 	//convert texture to cv::Mat
 	cv::Mat img(cv::Size(t->m_width, t->m_height), CV_MAKETYPE(t->m_numBytesPerChan * 8, t->m_numChannels), t->m_data);
-	if(img.channels() == 1)
-	{
-		cv::cvtColor(img, img, CV_GRAY2RGB);
-	}
-	//reduce the number of colors
-	Imageprocessor::reduceColors(img, img, m_numColors);
+	
+	calcCooc(img);
+}
 
-	for(int direction = 0; direction < 4; direction++)
-	{	
-		//allocate output matrix
-		float** result = new float*[m_numColors];
-		for(int j = 0; j < m_numColors; j++)
-		{
-			result[j] = new float[m_numColors];
-			memset(result[j], 0, m_numColors * sizeof(float));
-		}
-
-		int dx, dy;
-		switch(direction)
-		{
-			case 0://0 degrees -> horizontal
-				dx = 1;
-				dy = 0;
-				m_cooc0 = result;
-				break;
-			case 1://45 degrees -> diagonal
-				dx = 1;
-				dy = 1;
-				m_cooc1 = result;
-				break;
-			case 2://90 degrees -> vertical
-				dx = 0;
-				dy = 1;
-				m_cooc2 = result;
-				break;
-			case 3://135 degrees -> diagonal
-				dx = -1;
-				dy = 1;
-				m_cooc3 = result;
-				break
-		}	
-
-
-		//calculate cooccurrence matrix
-		for (int y = 0; y < img.rows; y++)
-		{
-			for(int x = 0; x < img.cols; x++)
-			{
-				if (x + dx >= 0 && x + dx < img.cols && y + dy >= 0 && y + dy < img.rows)
-				{
-					result[img.at<unsigned char>(y,x)][img.at<unsigned char>(y+dy,x+dx)]++;
-				}
-				if (x - dx >= 0 && x - dx < img.cols && y - dy >= 0 && y - dy < img.rows)
-				{
-					result[img.at<unsigned char>(y,x)][img.at<unsigned char>(y-dy,x-dx)]++;
-				}
-			}
-		}
-
-		
-		//normalize cooccurrence matrix
-		float denom = 1;
-		if (direction == 0 || direction == 2)
-		{
-			denom = 2 * img.rows * (img.cols -1);
-		}
-		else
-		{
-			denom = 2 * (img.rows - 1) * (img.cols - 1);
-		}
-		for (int i = 0; i < m_numColors; i++) 
-		{
-			for(int j = 0; j < m_numColors; j++)
-			{
-				result[i][j] /= denom;
-			}
-		}
-	}
+Statistics::Statistics(const cv::Mat &t, int numColors)
+{
+	m_numColors = numColors;
+	calcCooc(t);
 }
 
 float Statistics::textureVectorDistance(float* v1, float* v2, int nComps)
@@ -129,7 +58,14 @@ float Statistics::textureVectorDistance(float* v1, float* v2, int nComps)
 }
 
 Statistics::~Statistics() {
-	//TODO
+	//free the cooccurrence matrix
+	for (int i = 0; i < m_numColors; i++)
+	{
+		delete[] cooc0[i];
+		delete[] cooc1[i];
+		delete[] cooc2[i];
+		delete[] cooc3[i];
+	}
 }
 
 float calcASM()
@@ -661,6 +597,89 @@ float calcMaxCorrelationCoefficient()
 		result += sqrt(E.at<double>(1,0));
 	}
 	return result / 4;
+}
+
+void Statistics::calcCooc(const cv::Mat &t)
+{
+	cv::Mat img(t);
+	if(img.channels() == 1)
+	{
+		cv::cvtColor(img, img, CV_GRAY2RGB);
+	}
+	//reduce the number of colors
+	Imageprocessor::reduceColors(img, img, m_numColors);
+
+	for(int direction = 0; direction < 4; direction++)
+	{	
+		//allocate output matrix
+		float** cooc = new float*[m_numColors];
+		for(int j = 0; j < m_numColors; j++)
+		{
+			cooc[j] = new float[m_numColors];
+			memset(cooc[j], 0, m_numColors * sizeof(float));
+		}
+
+		int dx, dy;
+		switch(direction)
+		{
+			case 0://0 degrees -> horizontal
+				dx = 1;
+				dy = 0;
+				m_cooc0 = cooc;
+				break;
+			case 1://45 degrees -> diagonal
+				dx = 1;
+				dy = 1;
+				m_cooc1 = cooc;
+				break;
+			case 2://90 degrees -> vertical
+				dx = 0;
+				dy = 1;
+				m_cooc2 = cooc;
+				break;
+			case 3://135 degrees -> diagonal
+				dx = -1;
+				dy = 1;
+				m_cooc3 = cooc;
+				break
+		}	
+
+
+		//calculate cooccurrence matrix
+		for (int y = 0; y < img.rows; y++)
+		{
+			for(int x = 0; x < img.cols; x++)
+			{
+				if (x + dx >= 0 && x + dx < img.cols && y + dy >= 0 && y + dy < img.rows)
+				{
+					cooc[img.at<unsigned char>(y,x)][img.at<unsigned char>(y+dy,x+dx)]++;
+				}
+				if (x - dx >= 0 && x - dx < img.cols && y - dy >= 0 && y - dy < img.rows)
+				{
+					cooc[img.at<unsigned char>(y,x)][img.at<unsigned char>(y-dy,x-dx)]++;
+				}
+			}
+		}
+
+		
+		//normalize cooccurrence matrix
+		float denom = 1;
+		if (direction == 0 || direction == 2)
+		{
+			denom = 2 * img.rows * (img.cols -1);
+		}
+		else
+		{
+			denom = 2 * (img.rows - 1) * (img.cols - 1);
+		}
+		for (int i = 0; i < m_numColors; i++) 
+		{
+			for(int j = 0; j < m_numColors; j++)
+			{
+				cooc[i][j] /= denom;
+			}
+		}
+	}
 }
 
 float Statistics::px(float** com, int i)
