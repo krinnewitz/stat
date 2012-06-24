@@ -5,6 +5,7 @@
 #include <opencv/highgui.h>
 #include <iostream>
 #include <map>
+#include "Statistics.hpp"
 
 /**
  * \file	Main.cpp
@@ -19,176 +20,6 @@
 
 using namespace std;
 
-
-/**
- * \brief Reduces the number of colors in the given image
- * 
- * \param input		The input image to reduce the colors in.
-			This must be a 3 channel image with 8 bit
-			per channel.
- * \param output 	The destination to store the result in.
-			This will be an 8 bit one channel image.
- * \param numColors	The maximum number of colors in the 
- *			output image. Note, that this value must
- *			be less than or equal to 256 since the 
- *			output image has only one 8 bit channel.
- */
-void reduceColors(cv::Mat input, cv::Mat &output, int numColors)
-{
-	//allocate output
-	output = cv::Mat(input.size(), CV_8U);
-	//3 channel pointer to input image
-	cv::Mat_<cv::Vec3b>& ptrInput = (cv::Mat_<cv::Vec3b>&)input; 
-	//1 channel pointer to output image
-	cv::Mat_<uchar>& ptrOutput = (cv::Mat_<uchar>&)output;
-
-	for (int y = 0; y < input.size().height; y++)
-	{
-		for(int x = 0; x < input.size().width; x++)
-		{
-			unsigned long int currCol = 0;
-			currCol |= (ptrInput(y, x)[0]) << 16;
-			currCol |= (ptrInput(y, x)[1]) <<  8;
-			currCol |= (ptrInput(y, x)[2]) <<  0;
-			ptrOutput(y,x) = currCol / (pow(2, 24) / numColors);
-		}
-	}
-}
-
-/**
- * \brief Calculates the cooccurrence matrix for the given texture
- *
- * \param	input		The texture
- * \param	numColors	The number of gray levels to use
- * \param	direction	The direction to calculate the
- *				cooccurrence matrix for
- *
- * \return	The normalized cooccurrence matrix of size
- *		numColors x numColors
- */
-float**  calcCooccurrenceMatrix(const cv::Mat &input, int numColors, unsigned char direction)
-{
-	
-	//reduce the number of colors
-	cv::Mat img = input;
-	if(input.channels() == 1)
-	{
-		cv::cvtColor(input, img, CV_GRAY2RGB);
-	}
-	reduceColors(img, img, numColors);
-	
-	
-	int dx, dy;
-	
-	//0 degrees -> horizontal
-	if (direction == 0)
-	{
-		dx = 1;
-		dy = 0;
-	}
-	//45 degrees -> diagonal
-	if (direction == 1)
-	{
-		dx = 1;
-		dy = 1;
-	}
-	//90 degrees -> vertical
-	if(direction == 2)
-	{
-		dx = 0;
-		dy = 1;
-	}
-	//135 degrees -> diagonal
-	if (direction >=3)
-	{
-		dx = -1,
-		dy =  1;
-	}
-
-	//allocate output matrix
-	float** result = new float*[numColors];
-	for(int j = 0; j < numColors; j++)
-	{
-		result[j] = new float[numColors];
-		memset(result[j], 0, numColors * sizeof(float));
-	}
-
-	//calculate cooccurrence matrix
-	for (int y = 0; y < img.rows; y++)
-	{
-		for(int x = 0; x < img.cols; x++)
-		{
-			if (x + dx >= 0 && x + dx < img.cols && y + dy >= 0 && y + dy < img.rows)
-			{
-				result[img.at<unsigned char>(y,x)][img.at<unsigned char>(y+dy,x+dx)]++;
-			}
-			if (x - dx >= 0 && x - dx < img.cols && y - dy >= 0 && y - dy < img.rows)
-			{
-				result[img.at<unsigned char>(y,x)][img.at<unsigned char>(y-dy,x-dx)]++;
-			}
-		}
-	}
-
-	
-	//normalize cooccurrence matrix
-	float denom = 1;
-	if (direction == 0 || direction == 2)
-	{
-		denom = 2 * img.rows * (img.cols -1);
-	}
-	else
-	{
-		denom = 2 * (img.rows - 1) * (img.cols - 1);
-	}
-	for (int i = 0; i < numColors; i++) 
-	{
-		for(int j = 0; j < numColors; j++)
-		{
-			result[i][j] /= denom;
-		}
-	}
-		
-	return result;
-}
-
-/**
- * \brief	Returns the i-th entry of the magrginal probability matrix
- *		of the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of rows and cols of the com
- * \param	i		The entry to get
- *
- *
- */
-float px(float** com, int numColors, int i)
-{
-	float result = 0;
-	for (int j = 0; j < numColors; j++)
-	{
-		result += com[i][j];
-	}
-}
-
-
-/**
- * \brief	Returns the j-th entry of the magrginal probability matrix
- *		of the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of rows and cols of the com
- * \param	j		The entry to get
- *
- *
- */
-float py(float** com, int numColors, int j)
-{
-	float result = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		result += com[i][j];
-	}
-}
 
 /**
  * \brief	Calculates the energy of the given image
@@ -401,458 +232,7 @@ float calcCorrelation(const cv::Mat &input, float covariance)
 	return covariance / (sqrt(varX) * sqrt(varY)); 
 }
 
-/**
- * \brief	Calculates p_{x+y}(k)	
- *		
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- * \param	k		k
- *
- * \return 	p_{x+y}(k)
- */
-float pxplusy(float** com, int numColors, int k)
-{
-	float result = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		for (int j = 0; j < numColors; j++)
-		{
-			if (i + j == k)
-			{
-				result += com[i][j];
-			}
-		}
-	}
-}
 
-/**
- * \brief	Calculates p_{x-y}(k)	
- *		
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- * \param	k		k
- *
- * \return 	p_{x-y}(k)
- */
-float pxminusy(float** com, int numColors, int k)
-{
-	float result = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		for (int j = 0; j < numColors; j++)
-		{
-			if (abs(i - j) == k)
-			{
-				result += com[i][j];
-			}
-		}
-	}
-}
-
-/**
- * \brief	Calculates the angular second moment of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The angular second moment
- */
-float calcASM(float** com, int numColors)
-{
-	float result = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		for (int j = 0; j < numColors; j++)
-		{
-			result += com[i][j] * com[i][j];
-		}
-	}
-}
-
-/**
- * \brief	Calculates the contrast of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The contrast of the texture
- */
-float calcContrast(float** com, int numColors)
-{
-	float result = 0;
-	for (int n = 0; n < numColors; n++)
-	{
-		for (int i = 0; i < numColors; i++)
-		{
-			for (int j = 0; j < numColors; j++)
-			{
-				if (abs(i-j) == n)
-				{
-					result += n * n * com[i][j];
-				}
-			}
-		}
-	}
-}
-
-
-/**
- * \brief	Calculates the correlation of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The correlation of the texture
- */
-float calcCorrelation(float** com, int numColors)
-{
-	float ux = 0, uy = 0, sx = 0, sy = 0;
-
-	//calculate means of px and py
-	for (int i = 0; i < numColors; i++)
-	{
-		ux += px(com, numColors, i) / numColors;
-		uy += py(com, numColors, i) / numColors;
-	}
-	//calculate standard deviations of px and py
-	for (int i = 0; i < numColors; i++)
-	{
-		sx += (px(com, numColors, i) - ux) * (px(com, numColors, i) - ux);
-		sy += (py(com, numColors, i) - uy) * (py(com, numColors, i) - uy);
-	}
-	sx = sqrt(sx);
-	sy = sqrt(sy);
-		
-	//calculate correlatione
-	float result = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		for (int j = 0; j < numColors; j++)
-		{
-			result += (i * j * com[i][j] - ux * uy) / (sx * sy);
-		}
-	}
-	return result;
-}
-
-/**
- * \brief	Calculates the sum of squares of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The sum of squares of the texture
- */
-float calcSumOfSquares(float** com, int numColors)
-{
-	float u = 0;
-
-	//calculate mean of the com
-	for (int i = 0; i < numColors; i++)
-	{
-		for (int j = 0; j < numColors; j++)
-		{
-			u += com[i][j] / (numColors * numColors);
-		}
-	}
-		
-	//calculate sum of squares : variance
-	float result = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		for (int j = 0; j < numColors; j++)
-		{
-			result += (i - u) * (i - u) * com[i][j];
-		}
-	}
-	return result;
-}
-
-/**
- * \brief	Calculates the inverse difference moment of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The inverse difference moment of the texture
- */
-float calcInverseDifference(float** com, int numColors)
-{
-	//calculate inverse difference moment
-	float result = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		for (int j = 0; j < numColors; j++)
-		{
-			result += 1 / ( 1 + (i - j) * (i - j)) * com[i][j];
-		}
-	}
-	return result;
-}
-
-
-/**
- * \brief	Calculates the sum average of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The sum average of the texture
- */
-float calcSumAvg(float** com, int numColors)
-{
-	//calculate sum average
-	float result = 0;
-	for (int i = 0; i < 2 * numColors - 1; i++)
-	{
-		result += i * pxplusy(com, numColors, i);
-	}
-	return result;
-}
-
-
-/**
- * \brief	Calculates the sum entropy of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The sum entropy of the texture
- */
-float calcSumEntropy(float** com, int numColors)
-{
-	const float epsilon = 0.000001;
-
-	//calculate sum entropy
-	float result = 0;
-	for (int i = 0; i < 2 * numColors - 1; i++)
-	{
-		float p = pxplusy(com, numColors, i);
-		result +=  p * log(p + epsilon);
-	}
-	result *= -1;
-	return result;
-}
-
-/**
- * \brief	Calculates the sum variance of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The sum variance of the texture
- */
-float calcSumVariance(float** com, int numColors)
-{
-	//calculate sum variance
-	float result = 0;
-	float sumEntropy = calcSumEntropy(com, numColors);
-	for (int i = 0; i < 2 * numColors - 1; i++)
-	{
-		result += (i - sumEntropy) * (i - sumEntropy) * pxplusy(com, numColors, i);
-	}
-	return result;
-}
-
-
-/**
- * \brief	Calculates the entropy of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The entropy of the texture
- */
-float calcEntropy(float** com, int numColors)
-{
-	const float epsilon = 0.000001;
-	//calculate entropy
-	float result = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		for (int j = 0; j < numColors; j++)
-		{
-			result += com[i][j] * log(com[i][j] + epsilon);
-		}
-	}
-	result *= -1;
-	return result;
-}
-
-/**
- * \brief	Calculates the difference variance of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The difference variance of the texture
- */
-float calcDifferenceVariance(float** com, int numColors)
-{
-	float u = 0;
-
-	//calculate mean of pxminusy
-	for (int i = 0; i < numColors; i++)
-	{
-		u += pxminusy(com, numColors, i) / numColors;
-	}
-
-	//calculate difference variance
-	float result = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		result += (pxminusy(com, numColors, i) - u) * (pxminusy(com, numColors, i) - u);
-	}
-	return result;
-}
-
-/**
- * \brief	Calculates the difference entropy of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The difference entropy of the texture
- */
-float calcDifferenceEntropy(float** com, int numColors)
-{
-	const float epsilon = 0.000001;
-
-	//calculate difference entropy
-	float result = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		float p = pxminusy(com, numColors, i);
-		result +=  p * log(p + epsilon);
-	}
-	result *= -1;
-	return result;
-}
-
-
-
-/**
- * \brief	Calculates the information measures 1 of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The information measures 1 of the texture
- */
-float calcInformationMeasures1(float** com, int numColors)
-{
-	const float epsilon = 0.000001;
-
-	//calculate HXY1
-	float HXY1 = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		for (int j = 0; j < numColors; j++)
-		{
-			HXY1 += com[i][j] * log(px(com, numColors, i) * py(com, numColors, j) + epsilon);
-		}
-	}
-	HXY1 *= -1;
-
-	//calculate HX and HY
-	float HX = 0, HY = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		HX += px(com, numColors, i) * log(px(com, numColors, i) + epsilon);
-		HY += py(com, numColors, i) * log(py(com, numColors, i) + epsilon);
-	}
-	HX *= -1;
-	HY *= -1;
-
-	//calculate HXY
-	float HXY = calcEntropy(com, numColors);
-
-	//calculate  information measures 1
-	float result = (HXY - HXY1) / max(HX, HY);
-
-	return result;
-}
-
-/**
- * \brief	Calculates the information measures 2 of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The information measures 2 of the texture
- */
-float calcInformationMeasures2(float** com, int numColors)
-{
-	const float epsilon = 0.000001;
-
-	//calculate HXY2
-	float HXY2 = 0;
-	for (int i = 0; i < numColors; i++)
-	{
-		for (int j = 0; j < numColors; j++)
-		{
-			HXY2 += px(com, numColors, i) * py(com, numColors, j) * log(px(com, numColors, i) * py(com, numColors, j) + epsilon);
-		}
-	}
-	HXY2 *= -1;
-
-	//calculate HXY
-	float HXY = calcEntropy(com, numColors);
-
-	//calculate  information measures 1
-	float result = sqrt(1 - exp(-2.0 * (HXY2 - HXY)));
-
-	return result;
-}
-
-
-/**
- * \brief	Calculates the maximal correlation coefficient of the texture
- *		represented by the given cooccurrence matrix
- *
- * \param	com		The cooccurrence matrix
- * \param	numColors	The number of colors
- *
- * \return 	The maximal correlation coefficient of the texture
- */
-float calcMaxCorrelationCoefficient(float** com, int numColors)
-{
-	const float epsilon = 0.000001;
-	//calculate Q
-	cv::Mat Q(numColors, numColors, CV_64FC1);
-	for (int i = 0; i < numColors; i++)
-	{
-		for(int j = 0; j < numColors; j++)
-		{
-			Q.at<double>(i,j) = 0;
-			for (int k = 0; k < numColors; k++)
-			{
-				Q.at<double>(i,j) += (com[i][k] * com[j][k]) / (px(com, numColors, i) * py(com, numColors, k) + epsilon);
-			}
-		}
-	}
-	
-	//get the second largest eigenvalue of Q
-	cv::Mat E, V;
-	cv::eigen(Q, E, V);
-	double result  = E.at<double>(1,0);
-	return sqrt(result);
-}
 
 /**
  * \brief	Calculates several statistical values for the given
@@ -866,8 +246,8 @@ float calcMaxCorrelationCoefficient(float** com, int numColors)
  */
 float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 {
-	//We currently have 64 statistical values
-	numValues = 64;
+	//We currently have 22 statistical values
+	numValues = 22;
 
 	//Allocate result vector
 	float* result = new float[numValues];
@@ -902,130 +282,54 @@ float* statisticalAnalysis(const cv::Mat &input, int &numValues, int numColors)
 	result[7] = calcCorrelation(input, result[6] * input.rows * input.cols);
 
 //*****************statistical features of second order -> computed  on the image's cooccurrence matrix*****************
-	//calculate the cooccurrence matrix in horizontal direction
-	float** com0 = calcCooccurrenceMatrix(input, numColors, 0);
-	//calculate the cooccurrence matrix in diagonal direction
-	float** com1 = calcCooccurrenceMatrix(input, numColors, 1);
-	//calculate the cooccurrence matrix in vertical direction
-	float** com2 = calcCooccurrenceMatrix(input, numColors, 2);
-	//calculate the cooccurrence matrix in diagonal direction
-	float** com3 = calcCooccurrenceMatrix(input, numColors, 3);
 
+	lssr::Statistics* stats = new lssr::Statistics(input, numColors);
 
-//TODO: we should use average and range values later on for rotation invariance in case of 45, 90 and 135 degree rotations
 	//Angular second moment
-	result[8]  = calcASM(com0, numColors);
-	result[9]  = calcASM(com1, numColors);
-	result[10] = calcASM(com2, numColors);
-	result[11] = calcASM(com3, numColors);
+	result[8]  = stats->calcASM();
 
 	//constrast
-	result[12] = calcContrast(com0, numColors);
-	result[13] = calcContrast(com1, numColors);
-	result[14] = calcContrast(com2, numColors);
-	result[15] = calcContrast(com3, numColors);
+	result[9] = stats->calcContrast();
 	
 	//correlation
-	result[16] = calcCorrelation(com0, numColors);
-	result[17] = calcCorrelation(com1, numColors);
-	result[18] = calcCorrelation(com2, numColors);
-	result[19] = calcCorrelation(com3, numColors);
+	result[10] = stats->calcCorrelation();
 
 	//Sum of squares: Variance
-	result[20] = calcSumOfSquares(com0, numColors);
-	result[21] = calcSumOfSquares(com1, numColors);
-	result[22] = calcSumOfSquares(com2, numColors);
-	result[23] = calcSumOfSquares(com3, numColors);
+	result[11] = stats->calcSumOfSquares();
 
 	//Inverse difference moment
-	result[24] = calcInverseDifference(com0, numColors);
-	result[25] = calcInverseDifference(com1, numColors);
-	result[26] = calcInverseDifference(com2, numColors);
-	result[27] = calcInverseDifference(com3, numColors);
+	result[12] = stats->calcInverseDifference();
 	
 	//sum average
-	result[28] = calcSumAvg(com0, numColors);
-	result[29] = calcSumAvg(com1, numColors);
-	result[30] = calcSumAvg(com2, numColors);
-	result[31] = calcSumAvg(com3, numColors);
+	result[13] = stats->calcSumAvg();
 
 	//sum entropy
-	result[32] = calcSumEntropy(com0, numColors);
-	result[33] = calcSumEntropy(com1, numColors);
-	result[34] = calcSumEntropy(com2, numColors);
-	result[35] = calcSumEntropy(com3, numColors);
+	result[14] = stats->calcSumEntropy();
 
 	//sum variance
-	result[36] = calcSumVariance(com0, numColors);
-	result[37] = calcSumVariance(com1, numColors);
-	result[38] = calcSumVariance(com2, numColors);
-	result[39] = calcSumVariance(com3, numColors);
+	result[15] = stats->calcSumVariance();
 
 	//entropy
-	result[40] = calcEntropy(com0, numColors);
-	result[41] = calcEntropy(com1, numColors);
-	result[42] = calcEntropy(com2, numColors);
-	result[43] = calcEntropy(com3, numColors);
+	result[16] = stats->calcEntropy();
 
 	//difference variance
-	result[44] = calcDifferenceVariance(com0, numColors);
-	result[45] = calcDifferenceVariance(com1, numColors);
-	result[46] = calcDifferenceVariance(com2, numColors);
-	result[47] = calcDifferenceVariance(com3, numColors);
+	result[17] = stats->calcDifferenceVariance();
 
 	//difference entropy
-	result[48] = calcDifferenceEntropy(com0, numColors);
-	result[49] = calcDifferenceEntropy(com1, numColors);
-	result[50] = calcDifferenceEntropy(com2, numColors);
-	result[51] = calcDifferenceEntropy(com3, numColors);
+	result[18] = stats->calcDifferenceEntropy();
 
 	//information meeasures 1 of correlation
-	result[52] = calcInformationMeasures1(com0, numColors);
-	result[53] = calcInformationMeasures1(com1, numColors);
-	result[54] = calcInformationMeasures1(com2, numColors);
-	result[55] = calcInformationMeasures1(com3, numColors);
+	result[19] = stats->calcInformationMeasures1();
 	
 	//information meeasures 2 of correlation
-	result[56] = calcInformationMeasures2(com0, numColors);
-	result[57] = calcInformationMeasures2(com1, numColors);
-	result[58] = calcInformationMeasures2(com2, numColors);
-	result[59] = calcInformationMeasures2(com3, numColors);
+	result[20] = stats->calcInformationMeasures2();
 
 	//Maximal correlation coefficient
-	result[60] = calcMaxCorrelationCoefficient(com0, numColors);
-	result[61] = calcMaxCorrelationCoefficient(com1, numColors);
-	result[62] = calcMaxCorrelationCoefficient(com2, numColors);
-	result[63] = calcMaxCorrelationCoefficient(com3, numColors);
+	result[21] = stats->calcMaxCorrelationCoefficient();
 
-	//free the cooccurrence matrix
-	for (int i = 0; i < numColors; i++)
-	{
-		delete[] com0[i];
-		delete[] com1[i];
-		delete[] com2[i];
-		delete[] com3[i];
-	}
+	delete stats;
+
 	//return the result vector
-	return result;
-}
-
-/**
- * \brief	Calculates the distance of two texture vectors
- *
- * \param	v1	The first texture vector
- * \param	v2	The second texture vector
- * \param	nComps	The number of components of the texture
- *			vectors
- *
- * \return	The distance of the given texture vectors
- */
-float textureVectorDistance(float* v1, float* v2, int nComps)
-{
-	float result = 0;
-	for (int i = 0; i < nComps; i++)
-	{
-		result += fabs(v1[i] - v2[i]) / max(1.0f, max(v1[i], v2[i]));	
-	}
 	return result;
 }
 
@@ -1044,13 +348,13 @@ int main (int argc, char** argv)
 		int n = 0;	
 		float* stats1 = statisticalAnalysis(img1, n, numColors);	
 		float* stats2 = statisticalAnalysis(img2, n, numColors);	
-		cout<<textureVectorDistance(stats1, stats2, n)<<endl;
+		cout<<lssr::Statistics::textureVectorDistance(stats1, stats2, n)<<endl;
 		for(int i = 0; i < n; i++)
 		{
 			cout<<stats1[i]<<" "<<stats2[i]<<endl;
 		}
 
-		float** com = calcCooccurrenceMatrix(img1, numColors, 2);
+		/*float** com = calcCooccurrenceMatrix(img1, numColors, 2);
 		for(int i = 0; i < numColors; i++)
 		{
 			for (int j = 0; j < numColors; j++)
@@ -1059,7 +363,7 @@ int main (int argc, char** argv)
 			}
 			cout<<endl;
 		}
-
+*/
 		return EXIT_SUCCESS;			
 	}
 	else
