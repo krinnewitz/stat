@@ -69,6 +69,106 @@ public:
 	 */
 	virtual ~Statistics();
 
+	/**
+	 * \brief	Calculates the angular second moment of the texture
+	 *
+	 * \return 	The angular second moment
+	 */
+	float calcASM();
+
+	/**
+	 * \brief	Calculates the contrast of the texture
+	 *
+	 * \return 	The contrast of the texture
+	 */
+	float calcContrast();
+
+
+	/**
+	 * \brief	Calculates the correlation of the texture
+	 *
+	 * \return 	The correlation of the texture
+	 */
+	float calcCorrelation();
+
+	/**
+	 * \brief	Calculates the sum of squares of the texture
+	 *
+	 * \return 	The sum of squares of the texture
+	 */
+	float calcSumOfSquares();
+
+	/**
+	 * \brief	Calculates the inverse difference moment of the texture
+	 *		represented by the given cooccurrence matrix
+	 *
+	 * \return 	The inverse difference moment of the texture
+	 */
+	float calcInverseDifference();
+
+	/**
+	 * \brief	Calculates the sum average of the texture
+	 *
+	 * \return 	The sum average of the texture
+	 */
+	float calcSumAvg();
+
+	/**
+	 * \brief	Calculates the sum entropy of the texture
+	 *
+	 * \return 	The sum entropy of the texture
+	 */
+	float calcSumEntropy();
+
+	/**
+	 * \brief	Calculates the sum variance of the texture
+	 *
+	 * \return 	The sum variance of the texture
+	 */
+	float calcSumVariance();
+
+	/**
+	 * \brief	Calculates the entropy of the texture
+	 *
+	 * \return 	The entropy of the texture
+	 */
+	float calcEntropy();
+
+	/**
+	 * \brief	Calculates the difference variance of the texture
+	 *
+	 * \return 	The difference variance of the texture
+	 */
+	float calcDifferenceVariance();
+
+	/**
+	 * \brief	Calculates the difference entropy of the texture
+	 *
+	 * \return 	The difference entropy of the texture
+	 */
+	float calcDifferenceEntropy();
+
+	/**
+	 * \brief	Calculates the information measures 1 of the texture
+	 *
+	 * \return 	The information measures 1 of the texture
+	 */
+	float calcInformationMeasures1();
+
+	/**
+	 * \brief	Calculates the information measures 2 of the texture
+	 *
+	 * \return 	The information measures 2 of the texture
+	 */
+	float calcInformationMeasures2();
+
+	/**
+	 * \brief	Calculates the maximal correlation coefficient of the texture
+	 *
+	 * \return 	The maximal correlation coefficient of the texture
+	 */
+	float calcMaxCorrelationCoefficient();
+
 private:
 	/**
 	 * \brief	Returns the i-th entry of the magrginal probability matrix
