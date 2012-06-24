@@ -25,7 +25,8 @@
  */
 
 #include "Statistics.hpp"
-#include "ImageProcessor.hpp"
+
+using namespace std;
 
 namespace lssr {
 
@@ -33,7 +34,7 @@ float Statistics::epsilon = 0.0000001;
 
 Statistics::Statistics(Texture* t, int numColors)
 {
-	m_numColors = numColors;
+	this->m_numColors = numColors;
 
 	//convert texture to cv::Mat
 	cv::Mat img(cv::Size(t->m_width, t->m_height), CV_MAKETYPE(t->m_numBytesPerChan * 8, t->m_numChannels), t->m_data);
@@ -43,7 +44,7 @@ Statistics::Statistics(Texture* t, int numColors)
 
 Statistics::Statistics(const cv::Mat &t, int numColors)
 {
-	m_numColors = numColors;
+	this->m_numColors = numColors;
 	calcCooc(t);
 }
 
@@ -59,16 +60,16 @@ float Statistics::textureVectorDistance(float* v1, float* v2, int nComps)
 
 Statistics::~Statistics() {
 	//free the cooccurrence matrix
-	for (int i = 0; i < m_numColors; i++)
+	for (int i = 0; i < this->m_numColors; i++)
 	{
-		delete[] cooc0[i];
-		delete[] cooc1[i];
-		delete[] cooc2[i];
-		delete[] cooc3[i];
+		delete[] this->m_cooc0[i];
+		delete[] this->m_cooc1[i];
+		delete[] this->m_cooc2[i];
+		delete[] this->m_cooc3[i];
 	}
 }
 
-float calcASM()
+float Statistics::calcASM()
 {
 	float result = 0;
 	for (int direction = 0; direction < 4; direction++)
@@ -77,22 +78,22 @@ float calcASM()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
 			
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			for (int j = 0; j < m_numColors; j++)
+			for (int j = 0; j < this->m_numColors; j++)
 			{
 				result += com[i][j] * com[i][j];
 			}
@@ -101,7 +102,7 @@ float calcASM()
 	return result / 4;
 }
 
-float calcContrast()
+float Statistics::calcContrast()
 {
 	float result = 0;
 	for (int direction = 0; direction < 4; direction++)
@@ -110,24 +111,24 @@ float calcContrast()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
 			
-		for (int n = 0; n < m_numColors; n++)
+		for (int n = 0; n < this->m_numColors; n++)
 		{
-			for (int i = 0; i < m_numColors; i++)
+			for (int i = 0; i < this->m_numColors; i++)
 			{
-				for (int j = 0; j < m_numColors; j++)
+				for (int j = 0; j < this->m_numColors; j++)
 				{
 					if (abs(i-j) == n)
 					{
@@ -141,7 +142,7 @@ float calcContrast()
 }
 
 
-float calcCorrelation()
+float Statistics::calcCorrelation()
 {
 	float result = 0;
 	for (int direction = 0; direction < 4; direction++)
@@ -150,40 +151,40 @@ float calcCorrelation()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
 			
 		float ux = 0, uy = 0, sx = 0, sy = 0;
 
 		//calculate means of px and py
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			ux += px(com, m_numColors, i) / m_numColors;
-			uy += py(com, m_numColors, i) / m_numColors;
+			ux += px(com, i) / this->m_numColors;
+			uy += py(com, i) / this->m_numColors;
 		}
 		//calculate standard deviations of px and py
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			sx += (px(com, m_numColors, i) - ux) * (px(com, m_numColors, i) - ux);
-			sy += (py(com, m_numColors, i) - uy) * (py(com, m_numColors, i) - uy);
+			sx += (px(com, i) - ux) * (px(com, i) - ux);
+			sy += (py(com, i) - uy) * (py(com, i) - uy);
 		}
 		sx = sqrt(sx);
 		sy = sqrt(sy);
 			
 		//calculate correlation
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			for (int j = 0; j < m_numColors; j++)
+			for (int j = 0; j < this->m_numColors; j++)
 			{
 				result += (i * j * com[i][j] - ux * uy) / (sx * sy);
 			}
@@ -192,7 +193,7 @@ float calcCorrelation()
 	return result / 4;
 }
 
-float calcSumOfSquares()
+float Statistics::calcSumOfSquares()
 {
 	float result = 0;
 	for (int direction = 0; direction < 4; direction++)
@@ -201,33 +202,33 @@ float calcSumOfSquares()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
 		float u = 0;
 
 		//calculate mean of the com
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			for (int j = 0; j < m_numColors; j++)
+			for (int j = 0; j < this->m_numColors; j++)
 			{
-				u += com[i][j] / (m_numColors * m_numColors);
+				u += com[i][j] / (this->m_numColors * this->m_numColors);
 			}
 		}
 			
 		//calculate sum of squares : variance
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			for (int j = 0; j < m_numColors; j++)
+			for (int j = 0; j < this->m_numColors; j++)
 			{
 				result += (i - u) * (i - u) * com[i][j];
 			}
@@ -236,7 +237,7 @@ float calcSumOfSquares()
 	return result / 4;
 }
 
-float calcInverseDifference()
+float Statistics::calcInverseDifference()
 {
 	//calculate inverse difference moment
 	float result = 0;
@@ -246,21 +247,21 @@ float calcInverseDifference()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			for (int j = 0; j < m_numColors; j++)
+			for (int j = 0; j < this->m_numColors; j++)
 			{
 				result += 1 / ( 1 + (i - j) * (i - j)) * com[i][j];
 			}
@@ -269,7 +270,7 @@ float calcInverseDifference()
 	return result / 4;
 }
 
-float calcSumAvg()
+float Statistics::calcSumAvg()
 {
 	//calculate sum average
 	float result = 0;
@@ -279,27 +280,27 @@ float calcSumAvg()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
-		for (int i = 0; i < 2 * m_numColors - 1; i++)
+		for (int i = 0; i < 2 * this->m_numColors - 1; i++)
 		{
-			result += i * pxplusy(com, m_numColors, i);
+			result += i * pxplusy(com, i);
 		}
 	}
 	return result / 4;
 }
 
-float calcSumEntropy()
+float Statistics::calcSumEntropy()
 {
 	//calculate sum entropy
 	float result = 0;
@@ -309,28 +310,28 @@ float calcSumEntropy()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
-		for (int i = 0; i < 2 * m_numColors - 1; i++)
+		for (int i = 0; i < 2 * this->m_numColors - 1; i++)
 		{
-			float p = pxplusy(com, m_numColors, i);
+			float p = pxplusy(com, i);
 			result +=  p * log(p + Statistics::epsilon);
 		}
 	}
 	return result / -4;
 }
 
-float calcSumVariance()
+float Statistics::calcSumVariance()
 {
 	//calculate sum variance
 	float result = 0;
@@ -340,28 +341,28 @@ float calcSumVariance()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
-		float sumEntropy = calcSumEntropy(com, m_numColors);
-		for (int i = 0; i < 2 * m_numColors - 1; i++)
+		float sumEntropy = calcSumEntropy(); //TODO: Problem
+		for (int i = 0; i < 2 * this->m_numColors - 1; i++)
 		{
-			result += (i - sumEntropy) * (i - sumEntropy) * pxplusy(com, m_numColors, i);
+			result += (i - sumEntropy) * (i - sumEntropy) * pxplusy(com, i);
 		}
 	}
 	return result / 4;
 }
 
-float calcEntropy()
+float Statistics::calcEntropy()
 {
 	//calculate entropy
 	float result = 0;
@@ -371,21 +372,21 @@ float calcEntropy()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			for (int j = 0; j < m_numColors; j++)
+			for (int j = 0; j < this->m_numColors; j++)
 			{
 				result += com[i][j] * log(com[i][j] + Statistics::epsilon);
 			}
@@ -394,7 +395,7 @@ float calcEntropy()
 	return result / -4;
 }
 
-float calcDifferenceVariance()
+float Statistics::calcDifferenceVariance()
 {
 	float result = 0;
 	for (int direction = 0; direction < 4; direction++)
@@ -403,36 +404,36 @@ float calcDifferenceVariance()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
 		float u = 0;
 
 		//calculate mean of pxminusy
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			u += pxminusy(com, m_numColors, i) / m_numColors;
+			u += pxminusy(com, i) / this->m_numColors;
 		}
 
 		//calculate difference variance
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			result += (pxminusy(com, m_numColors, i) - u) * (pxminusy(com, m_numColors, i) - u);
+			result += (pxminusy(com, i) - u) * (pxminusy(com, i) - u);
 		}
 	}
 	return result / 4;
 }
 
-float calcDifferenceEntropy()
+float Statistics::calcDifferenceEntropy()
 {
 	//calculate difference entropy
 	float result = 0;
@@ -442,28 +443,28 @@ float calcDifferenceEntropy()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			float p = pxminusy(com, m_numColors, i);
+			float p = pxminusy(com, i);
 			result +=  p * log(p + Statistics::epsilon);
 		}
 	}
 	return result / -4;
 }
 
-float calcInformationMeasures1()
+float Statistics::calcInformationMeasures1()
 {
 	float result = 0;
 	for (int direction = 0; direction < 4; direction++)
@@ -472,41 +473,41 @@ float calcInformationMeasures1()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
 		//calculate HXY1
 		float HXY1 = 0;
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			for (int j = 0; j < m_numColors; j++)
+			for (int j = 0; j < this->m_numColors; j++)
 			{
-				HXY1 += com[i][j] * log(px(com, m_numColors, i) * py(com, m_numColors, j) + Statistics::epsilon);
+				HXY1 += com[i][j] * log(px(com, i) * py(com, j) + Statistics::epsilon);
 			}
 		}
 		HXY1 *= -1;
 
 		//calculate HX and HY
 		float HX = 0, HY = 0;
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			HX += px(com, m_numColors, i) * log(px(com, m_numColors, i) + Statistics::epsilon);
-			HY += py(com, m_numColors, i) * log(py(com, m_numColors, i) + Statistics::epsilon);
+			HX += px(com, i) * log(px(com, i) + Statistics::epsilon);
+			HY += py(com, i) * log(py(com, i) + Statistics::epsilon);
 		}
 		HX *= -1;
 		HY *= -1;
 
 		//calculate HXY
-		float HXY = calcEntropy(com, m_numColors);
+		float HXY = calcEntropy(); //TODO: Problem
 
 		//calculate  information measures 1
 		result += (HXY - HXY1) / max(HX, HY);
@@ -515,7 +516,7 @@ float calcInformationMeasures1()
 	return result / 4;
 }
 
-float calcInformationMeasures2()
+float Statistics::calcInformationMeasures2()
 {
 	float result = 0;
 	for (int direction = 0; direction < 4; direction++)
@@ -524,31 +525,31 @@ float calcInformationMeasures2()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
 		//calculate HXY2
 		float HXY2 = 0;
-		for (int i = 0; i < m_numColors; i++)
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			for (int j = 0; j < m_numColors; j++)
+			for (int j = 0; j < this->m_numColors; j++)
 			{
-				HXY2 += px(com, m_numColors, i) * py(com, m_numColors, j) * log(px(com, m_numColors, i) * py(com, m_numColors, j) + Statistics::epsilon);
+				HXY2 += px(com, i) * py(com, j) * log(px(com, i) * py(com, j) + Statistics::epsilon);
 			}
 		}
 		HXY2 *= -1;
 
 		//calculate HXY
-		float HXY = calcEntropy(com, m_numColors);
+		float HXY = calcEntropy(); //TODO: Problem
 
 		//calculate  information measures 1
 		result += sqrt(1 - exp(-2.0 * (HXY2 - HXY)));
@@ -556,7 +557,7 @@ float calcInformationMeasures2()
 	return result / 4;
 }
 
-float calcMaxCorrelationCoefficient()
+float Statistics::calcMaxCorrelationCoefficient()
 {
 	double result = 0;
 	for (int direction = 0; direction < 4; direction++)
@@ -565,28 +566,28 @@ float calcMaxCorrelationCoefficient()
 		switch(direction)
 		{
 			case 0:
-				com = m_cooc0;
+				com = this->m_cooc0;
 				break;
 			case 1:
-				com = m_cooc1;
+				com = this->m_cooc1;
 				break;
 			case 2:
-				com = m_cooc2;
+				com = this->m_cooc2;
 				break;
 			case 3:
-				com = m_cooc3;
+				com = this->m_cooc3;
 				break;
 		}
 		//calculate Q
-		cv::Mat Q(m_numColors, m_numColors, CV_64FC1);
-		for (int i = 0; i < m_numColors; i++)
+		cv::Mat Q(this->m_numColors, this->m_numColors, CV_64FC1);
+		for (int i = 0; i < this->m_numColors; i++)
 		{
-			for(int j = 0; j < m_numColors; j++)
+			for(int j = 0; j < this->m_numColors; j++)
 			{
 				Q.at<double>(i,j) = 0;
-				for (int k = 0; k < m_numColors; k++)
+				for (int k = 0; k < this->m_numColors; k++)
 				{
-					Q.at<double>(i,j) += (com[i][k] * com[j][k]) / (px(com, m_numColors, i) * py(com, m_numColors, k) + Statistics::epsilon);
+					Q.at<double>(i,j) += (com[i][k] * com[j][k]) / (px(com, i) * py(com, k) + Statistics::epsilon);
 				}
 			}
 		}
@@ -607,16 +608,16 @@ void Statistics::calcCooc(const cv::Mat &t)
 		cv::cvtColor(img, img, CV_GRAY2RGB);
 	}
 	//reduce the number of colors
-	Imageprocessor::reduceColors(img, img, m_numColors);
+	ImageProcessor::reduceColors(img, img, this->m_numColors);
 
 	for(int direction = 0; direction < 4; direction++)
 	{	
 		//allocate output matrix
-		float** cooc = new float*[m_numColors];
-		for(int j = 0; j < m_numColors; j++)
+		float** cooc = new float*[this->m_numColors];
+		for(int j = 0; j < this->m_numColors; j++)
 		{
-			cooc[j] = new float[m_numColors];
-			memset(cooc[j], 0, m_numColors * sizeof(float));
+			cooc[j] = new float[this->m_numColors];
+			memset(cooc[j], 0, this->m_numColors * sizeof(float));
 		}
 
 		int dx, dy;
@@ -625,23 +626,23 @@ void Statistics::calcCooc(const cv::Mat &t)
 			case 0://0 degrees -> horizontal
 				dx = 1;
 				dy = 0;
-				m_cooc0 = cooc;
+				this->m_cooc0 = cooc;
 				break;
 			case 1://45 degrees -> diagonal
 				dx = 1;
 				dy = 1;
-				m_cooc1 = cooc;
+				this->m_cooc1 = cooc;
 				break;
 			case 2://90 degrees -> vertical
 				dx = 0;
 				dy = 1;
-				m_cooc2 = cooc;
+				this->m_cooc2 = cooc;
 				break;
 			case 3://135 degrees -> diagonal
 				dx = -1;
 				dy = 1;
-				m_cooc3 = cooc;
-				break
+				this->m_cooc3 = cooc;
+				break;
 		}	
 
 
@@ -672,9 +673,9 @@ void Statistics::calcCooc(const cv::Mat &t)
 		{
 			denom = 2 * (img.rows - 1) * (img.cols - 1);
 		}
-		for (int i = 0; i < m_numColors; i++) 
+		for (int i = 0; i < this->m_numColors; i++) 
 		{
-			for(int j = 0; j < m_numColors; j++)
+			for(int j = 0; j < this->m_numColors; j++)
 			{
 				cooc[i][j] /= denom;
 			}
@@ -685,7 +686,7 @@ void Statistics::calcCooc(const cv::Mat &t)
 float Statistics::px(float** com, int i)
 {
 	float result = 0;
-	for (int j = 0; j < m_numColors; j++)
+	for (int j = 0; j < this->m_numColors; j++)
 	{
 		result += com[i][j];
 	}
@@ -694,7 +695,7 @@ float Statistics::px(float** com, int i)
 float Statistics::py(float** com, int j)
 {
 	float result = 0;
-	for (int i = 0; i < m_numColors; i++)
+	for (int i = 0; i < this->m_numColors; i++)
 	{
 		result += com[i][j];
 	}
@@ -703,9 +704,9 @@ float Statistics::py(float** com, int j)
 float Statistics::pxplusy(float** com, int k)
 {
 	float result = 0;
-	for (int i = 0; i < m_numColors; i++)
+	for (int i = 0; i < this->m_numColors; i++)
 	{
-		for (int j = 0; j < m_numColors; j++)
+		for (int j = 0; j < this->m_numColors; j++)
 		{
 			if (i + j == k)
 			{
@@ -718,9 +719,9 @@ float Statistics::pxplusy(float** com, int k)
 float Statistics::pxminusy(float** com, int k)
 {
 	float result = 0;
-	for (int i = 0; i < m_numColors; i++)
+	for (int i = 0; i < this->m_numColors; i++)
 	{
-		for (int j = 0; j < m_numColors; j++)
+		for (int j = 0; j < this->m_numColors; j++)
 		{
 			if (abs(i - j) == k)
 			{

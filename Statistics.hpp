@@ -28,9 +28,12 @@
 #define STATISTICS_HPP_
 
 #include <cstring>
+#include <math.h>
 #include <opencv/highgui.h>
 #include <opencv/cv.h>
 #include <cstdio>
+#include "Texture.hpp"
+#include "ImageProcessor.hpp"
 
 namespace lssr {
 
@@ -49,7 +52,7 @@ public:
 	* \param	numColors	The number of gray levels to use
 	*
 	*/
-	Statistics(Texture* t, int numColors)
+	Statistics(Texture* t, int numColors);
 
 	/**
 	* \brief Constructor. Calculates the cooccurrence matrix for the given Texture.
@@ -58,7 +61,7 @@ public:
 	* \param	numColors	The number of gray levels to use
 	*
 	*/
-	Statistics(const cv::Mat &t, int numColors)
+	Statistics(const cv::Mat &t, int numColors);
 
 	/**
 	* \brief	Calculates the distance of two texture vectors
@@ -244,6 +247,8 @@ private:
 
 	//cooccurrence matrix for 135 degrees direction
 	float** m_cooc3;
+
+	static float epsilon;
 };
 
 }
