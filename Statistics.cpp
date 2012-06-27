@@ -300,6 +300,18 @@ float Statistics::calcSumAvg()
 	return result / 4;
 }
 
+float Statistics::calcSumEntropy(float** com)
+{
+	//calculate sum entropy
+	float result = 0;
+	for (int i = 0; i < 2 * this->m_numColors - 1; i++)
+	{
+		float p = pxplusy(com, i);
+		result +=  p * log(p + Statistics::epsilon);
+	}
+	return result / -1;
+}
+
 float Statistics::calcSumEntropy()
 {
 	//calculate sum entropy
@@ -322,13 +334,9 @@ float Statistics::calcSumEntropy()
 				com = this->m_cooc3;
 				break;
 		}
-		for (int i = 0; i < 2 * this->m_numColors - 1; i++)
-		{
-			float p = pxplusy(com, i);
-			result +=  p * log(p + Statistics::epsilon);
-		}
+		result += calcSumEntropy(com);
 	}
-	return result / -4;
+	return result / 4;
 }
 
 float Statistics::calcSumVariance()
@@ -353,13 +361,27 @@ float Statistics::calcSumVariance()
 				com = this->m_cooc3;
 				break;
 		}
-		float sumEntropy = calcSumEntropy(); //TODO: Problem
+		float sumEntropy = calcSumEntropy(com);
 		for (int i = 0; i < 2 * this->m_numColors - 1; i++)
 		{
 			result += (i - sumEntropy) * (i - sumEntropy) * pxplusy(com, i);
 		}
 	}
 	return result / 4;
+}
+
+float Statistics::calcEntropy(float** com)
+{
+	//calculate entropy
+	float result = 0;
+	for (int i = 0; i < this->m_numColors; i++)
+	{
+		for (int j = 0; j < this->m_numColors; j++)
+		{
+			result += com[i][j] * log(com[i][j] + Statistics::epsilon);
+		}
+	}
+	return result / -1;
 }
 
 float Statistics::calcEntropy()
@@ -384,15 +406,9 @@ float Statistics::calcEntropy()
 				com = this->m_cooc3;
 				break;
 		}
-		for (int i = 0; i < this->m_numColors; i++)
-		{
-			for (int j = 0; j < this->m_numColors; j++)
-			{
-				result += com[i][j] * log(com[i][j] + Statistics::epsilon);
-			}
-		}
+		result += calcEntropy(com);
 	}
-	return result / -4;
+	return result / 4;
 }
 
 float Statistics::calcDifferenceVariance()
@@ -507,7 +523,7 @@ float Statistics::calcInformationMeasures1()
 		HY *= -1;
 
 		//calculate HXY
-		float HXY = calcEntropy(); //TODO: Problem
+		float HXY = calcEntropy(com);
 
 		//calculate  information measures 1
 		result += (HXY - HXY1) / max(HX, HY);
@@ -549,7 +565,7 @@ float Statistics::calcInformationMeasures2()
 		HXY2 *= -1;
 
 		//calculate HXY
-		float HXY = calcEntropy(); //TODO: Problem
+		float HXY = calcEntropy(com);
 
 		//calculate  information measures 1
 		result += sqrt(1 - exp(-2.0 * (HXY2 - HXY)));

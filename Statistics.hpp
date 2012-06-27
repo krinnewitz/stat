@@ -132,6 +132,16 @@ public:
 	float calcSumEntropy();
 
 	/**
+	 * \brief	Calculates the sum entropy of the given cooccurrence
+         *		matrix
+	 *
+  	 * \pram	com	The cooccurence matrix
+	 *
+	 * \return 	The entropy of the texture
+	 */
+	float calcSumEntropy(float** com);
+
+	/**
 	 * \brief	Calculates the sum variance of the texture
 	 *
 	 * \return 	The sum variance of the texture
@@ -144,6 +154,16 @@ public:
 	 * \return 	The entropy of the texture
 	 */
 	float calcEntropy();
+
+	/**
+	 * \brief	Calculates the entropy of the given cooccurrence
+         *		matrix
+	 *
+  	 * \pram	com	The cooccurence matrix
+	 *
+	 * \return 	The entropy of the texture
+	 */
+	float calcEntropy(float** com);
 
 	/**
 	 * \brief	Calculates the difference variance of the texture
